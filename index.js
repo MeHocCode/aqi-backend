@@ -5,47 +5,60 @@ const app = express();
 app.use(express.json());
 
 const connectionString = "postgresql://aqi_system_user:uYgQokcxGdGplUFLxstVfth6cVkcRBU6@dpg-d6rckes50q8c73c096l0-a.singapore-postgres.render.com/aqi_system";
+const pool = new Pool({ connectionString, ssl: { rejectUnauthorized: false } });
 
-const pool = new Pool({
-  connectionString: connectionString,
-  ssl: { rejectUnauthorized: false }
-});
+// Khởi tạo 2 bảng: 1 bảng LOGS (dữ liệu), 1 bảng REGISTRY (vị trí)
+const initDb = async () => {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS air_quality_logs (
+      id SERIAL PRIMARY KEY, device_id VARCHAR(50), temp FLOAT, humid FLOAT, mq135 FLOAT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS device_registry (
+      device_id VARCHAR(50) PRIMARY KEY, lat FLOAT, lon FLOAT, location_name TEXT
+    );
+  `);
+};
+initDb();
 
-// Trang chủ trả về giao diện HTML
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
-// API lấy dữ liệu đổ lên bản đồ và bảng
-app.get('/get-data', async (req, res) => {
+// API Đăng ký vị trí thiết bị
+app.post('/register-device', async (req, res) => {
+  const { deviceId, lat, lon, locationName } = req.body;
   try {
-    const result = await pool.query('SELECT * FROM air_quality_logs ORDER BY created_at DESC LIMIT 50');
+    await pool.query(
+      `INSERT INTO device_registry (device_id, lat, lon, location_name) 
+       VALUES ($1, $2, $3, $4) 
+       ON CONFLICT (device_id) DO UPDATE SET lat = $2, lon = $3, location_name = $4`,
+      [deviceId, lat, lon, locationName]
+    );
+    res.status(200).send("Registered!");
+  } catch (err) { res.status(500).send(err.message); }
+});
+
+// API lấy dữ liệu ĐÃ KHỚP VỊ TRÍ
+app.get('/get-map-data', async (req, res) => {
+  try {
+    // Lấy dữ liệu mới nhất của mỗi thiết bị và nối với bảng vị trí
+    const result = await pool.query(`
+      SELECT DISTINCT ON (l.device_id) l.device_id, l.temp, l.mq135, l.created_at, r.lat, r.lon, r.location_name
+      FROM air_quality_logs l
+      JOIN device_registry r ON l.device_id = r.device_id
+      ORDER BY l.device_id, l.created_at DESC
+    `);
     res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: "Lỗi DB" });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// API nhận dữ liệu từ ESP8266 hoặc từ Form trên Web
 app.post('/update-sensor', async (req, res) => {
-  const { deviceId, temp, humid, mq135, dust, lat, lon } = req.body;
-  try {
-    const query = `INSERT INTO air_quality_logs (device_id, temp, humid, mq135, dust, lat, lon) VALUES ($1, $2, $3, $4, $5, $6, $7)`;
-    await pool.query(query, [deviceId, temp, humid, mq135, dust, lat, lon]);
-    res.status(200).send("Saved!");
-  } catch (err) {
-    res.status(500).send("Error");
-  }
+  const { deviceId, temp, humid, mq135 } = req.body;
+  await pool.query(`INSERT INTO air_quality_logs (device_id, temp, humid, mq135) VALUES ($1, $2, $3, $4)`, [deviceId, temp, humid, mq135]);
+  res.status(200).send("Saved!");
 });
 
-// API XÓA SẠCH DỮ LIỆU (Mới thêm)
-app.delete('/delete-all', async (req, res) => {
-  try {
-    await pool.query('DELETE FROM air_quality_logs');
-    res.status(200).send("Cleaned!");
-  } catch (err) {
-    res.status(500).send("Fail");
-  }
+app.delete('/clear', async (req, res) => {
+  await pool.query('DELETE FROM air_quality_logs');
+  res.send("Cleared");
 });
 
 app.listen(process.env.PORT || 3000);
