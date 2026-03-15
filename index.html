@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Quan Trắc Không Khí</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .card { border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .status-online { color: #28a745; font-weight: bold; }
+        .table-container { background: white; border-radius: 10px; padding: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <h2 class="text-center mb-4">📊 Trạm Quan Trắc Không Khí Vĩ Mô</h2>
+        
+        <div class="row mb-4">
+            <div class="col-md-12 text-center">
+                <span class="status-online">● Đang hoạt động</span> | 
+                <small id="last-update">Cập nhật lần cuối: --:--:--</small>
+            </div>
+        </div>
+
+        <div class="table-container shadow-sm">
+            <table class="table table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Thời gian</th>
+                        <th>Thiết bị</th>
+                        <th>Nhiệt độ (°C)</th>
+                        <th>Độ ẩm (%)</th>
+                        <th>Bụi (mg/m³)</th>
+                        <th>AQI (MQ135)</th>
+                        <th>Vị trí (Lat, Lon)</th>
+                    </tr>
+                </thead>
+                <tbody id="data-table">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        async function fetchData() {
+            try {
+                const response = await fetch('/get-data');
+                const data = await response.json();
+                const tableBody = document.getElementById('data-table');
+                tableBody.innerHTML = ''; // Xóa dữ liệu cũ
+
+                data.forEach(row => {
+                    const date = new Date(row.created_at).toLocaleString('vi-VN');
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${date}</td>
+                        <td><span class="badge bg-primary">${row.device_id || 'N/A'}</span></td>
+                        <td>${row.temp || 0}</td>
+                        <td>${row.humid || 0}</td>
+                        <td>${row.dust || 0}</td>
+                        <td>${row.mq135 || 0}</td>
+                        <td><small>${row.lat || 0}, ${row.lon || 0}</small></td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+
+                document.getElementById('last-update').innerText = "Cập nhật lần cuối: " + new Date().toLocaleTimeString();
+            } catch (error) {
+                console.error("Lỗi lấy dữ liệu:", error);
+            }
+        }
+
+        // Tự động cập nhật dữ liệu mỗi 5 giây
+        setInterval(fetchData, 5000);
+        fetchData(); // Chạy lần đầu ngay khi load trang
+    </script>
+</body>
+</html>
