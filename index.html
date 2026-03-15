@@ -562,8 +562,8 @@
 
         /* ─── SCROLL FIX FOR LIST ─── */
         #status-list-wrap {
-            max-height: 300px;
             overflow-y: auto;
+            flex: 1;
             padding-right: 2px;
         }
 
@@ -817,6 +817,11 @@
                 document.getElementById('stat-avg').className = 'stat-value ' + (avg > 150 ? 'bad' : avg > 100 ? 'moderate' : 'good');
                 document.getElementById('stat-max').textContent = Math.max(...aqiValues);
                 document.getElementById('stat-min').textContent = Math.min(...aqiValues);
+            } else {
+                document.getElementById('stat-avg').textContent = '-';
+                document.getElementById('stat-avg').className = 'stat-value';
+                document.getElementById('stat-max').textContent = '-';
+                document.getElementById('stat-min').textContent = '-';
             }
             document.getElementById('station-count').textContent = devices.length + ' trạm';
 
@@ -836,9 +841,9 @@
                     L.circle([dev.lat, dev.lon], {
                         color: color,
                         fillColor: color,
-                        fillOpacity: 0.18,
-                        weight: 1,
-                        radius: 500
+                        fillOpacity: 0.15,
+                        weight: 0,
+                        radius: 1000
                     }).addTo(markerGroup);
 
                     // 3. Accurate position marker
@@ -885,12 +890,12 @@
                 }
             });
 
-            // 5. Heatmap layer
+            // 5. Heatmap layer – bán kính lớn để tạo vùng giao thoa thực sự
             L.heatLayer(heatData, {
-                radius: 50,
-                blur: 30,
+                radius: 80,
+                blur: 60,
                 maxZoom: 17,
-                gradient: { 0.4: 'blue', 0.65: 'lime', 1: 'red' }
+                gradient: { 0.0: '#22c55e', 0.5: '#f97316', 0.75: '#ef4444', 1.0: '#7c3aed' }
             }).addTo(markerGroup);
         }
 
