@@ -3,6 +3,7 @@ const { Pool } = require('pg');
 const path = require('path');
 const app = express();
 app.use(express.json());
+app.use(express.static('.'));
 
 // Kết nối tới Database của bạn trên Render
 const connectionString = "postgresql://aqi_system_user:uYgQokcxGdGplUFLxstVfth6cVkcRBU6@dpg-d6rckes50q8c73c096l0-a.singapore-postgres.render.com/aqi_system";
