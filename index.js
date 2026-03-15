@@ -3,7 +3,6 @@ const { Pool } = require('pg');
 const app = express();
 app.use(express.json());
 
-// Thông tin kết nối lấy từ Render của bạn
 const connectionString = "postgresql://aqi_system_user:uYgQokcxGdGplUFLxstVfth6cVkcRBU6@dpg-d6rckes50q8c73c096l0-a.singapore-postgres.render.com/aqi_system";
 
 const pool = new Pool({
@@ -11,7 +10,6 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Hàm này sẽ tự chạy để tạo bảng nếu DB của bạn đang trống
 const initDb = async () => {
   const createTableQuery = `
     CREATE TABLE IF NOT EXISTS air_quality_logs (
@@ -38,9 +36,21 @@ const initDb = async () => {
 
 initDb();
 
+// Trang chủ kiểm tra server
 app.get('/', (req, res) => res.send("AQI Server đang hoạt động! Chờ dữ liệu từ ESP8266..."));
 
-// Đường dẫn đón dữ liệu từ ESP8266
+// API để xem toàn bộ dữ liệu (Bảo cần cái này!)
+app.get('/get-data', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM air_quality_logs ORDER BY created_at DESC LIMIT 100');
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Lỗi khi lấy dữ liệu từ Database" });
+  }
+});
+
+// API để ESP8266 gửi dữ liệu lên
 app.post('/update-sensor', async (req, res) => {
   const { deviceId, temp, humid, mq2, mq7, mq135, dust, lat, lon } = req.body;
   try {
