@@ -1,6 +1,7 @@
 const express = require('express');
 const { Pool } = require('pg');
 const app = express();
+const path = require('path');
 app.use(express.json());
 
 const connectionString = "postgresql://aqi_system_user:uYgQokcxGdGplUFLxstVfth6cVkcRBU6@dpg-d6rckes50q8c73c096l0-a.singapore-postgres.render.com/aqi_system";
@@ -37,7 +38,9 @@ const initDb = async () => {
 initDb();
 
 // Trang chủ kiểm tra server
-app.get('/', (req, res) => res.send("AQI Server đang hoạt động! Chờ dữ liệu từ ESP8266..."));
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // API để xem toàn bộ dữ liệu (Bảo cần cái này!)
 app.get('/get-data', async (req, res) => {
