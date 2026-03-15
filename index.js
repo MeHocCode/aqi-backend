@@ -1,7 +1,7 @@
 const express = require('express');
 const { Pool } = require('pg');
-const app = express();
 const path = require('path');
+const app = express();
 app.use(express.json());
 
 const connectionString = "postgresql://aqi_system_user:uYgQokcxGdGplUFLxstVfth6cVkcRBU6@dpg-d6rckes50q8c73c096l0-a.singapore-postgres.render.com/aqi_system";
@@ -11,62 +11,40 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-const initDb = async () => {
-  const createTableQuery = `
-    CREATE TABLE IF NOT EXISTS air_quality_logs (
-        id SERIAL PRIMARY KEY,
-        device_id VARCHAR(50),
-        temp FLOAT,
-        humid FLOAT,
-        mq2 FLOAT,
-        mq7 FLOAT,
-        mq135 FLOAT,
-        dust FLOAT,
-        lat FLOAT,
-        lon FLOAT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-  `;
-  try {
-    await pool.query(createTableQuery);
-    console.log("--- DATABASE: Bảng air_quality_logs đã sẵn sàng! ---");
-  } catch (err) {
-    console.error("--- DATABASE ERROR: ---", err);
-  }
-};
-
-initDb();
-
-// Trang chủ kiểm tra server
+// Trang chủ trả về giao diện HTML
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// API để xem toàn bộ dữ liệu (Bảo cần cái này!)
+// API lấy dữ liệu đổ lên bản đồ và bảng
 app.get('/get-data', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM air_quality_logs ORDER BY created_at DESC LIMIT 100');
+    const result = await pool.query('SELECT * FROM air_quality_logs ORDER BY created_at DESC LIMIT 50');
     res.json(result.rows);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Lỗi khi lấy dữ liệu từ Database" });
+    res.status(500).json({ error: "Lỗi DB" });
   }
 });
 
-// API để ESP8266 gửi dữ liệu lên
+// API nhận dữ liệu từ ESP8266 hoặc từ Form trên Web
 app.post('/update-sensor', async (req, res) => {
-  const { deviceId, temp, humid, mq2, mq7, mq135, dust, lat, lon } = req.body;
+  const { deviceId, temp, humid, mq135, dust, lat, lon } = req.body;
   try {
-    const query = `
-      INSERT INTO air_quality_logs (device_id, temp, humid, mq2, mq7, mq135, dust, lat, lon)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-    `;
-    await pool.query(query, [deviceId, temp, humid, mq2, mq7, mq135, dust, lat, lon]);
-    console.log(`Đã nhận dữ liệu từ: ${deviceId}`);
+    const query = `INSERT INTO air_quality_logs (device_id, temp, humid, mq135, dust, lat, lon) VALUES ($1, $2, $3, $4, $5, $6, $7)`;
+    await pool.query(query, [deviceId, temp, humid, mq135, dust, lat, lon]);
     res.status(200).send("Saved!");
   } catch (err) {
-    console.error(err);
     res.status(500).send("Error");
+  }
+});
+
+// API XÓA SẠCH DỮ LIỆU (Mới thêm)
+app.delete('/delete-all', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM air_quality_logs');
+    res.status(200).send("Cleaned!");
+  } catch (err) {
+    res.status(500).send("Fail");
   }
 });
 
