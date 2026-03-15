@@ -2,120 +2,121 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hệ Thống Quan Trắc Vĩ Mô - Lê Thế Bảo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { background-color: #f1f3f5; }
-        #map { height: 400px; border-radius: 15px; margin-bottom: 20px; border: 2px solid #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .control-panel { background: white; padding: 20px; border-radius: 15px; }
+        #map { height: 600px; border-radius: 15px; cursor: crosshair; }
+        .info-panel { position: absolute; top: 20px; right: 20px; z-index: 1000; width: 300px; }
     </style>
 </head>
-<body>
-    <div class="container py-4">
-        <h2 class="text-center mb-4">🌍 Trạm Quan Trắc Không Khí Vĩ Mô</h2>
-
-        <div id="map"></div>
-
+<body class="bg-dark">
+    <div class="container-fluid p-4">
         <div class="row">
-            <div class="col-md-4 mb-4">
-                <div class="control-panel shadow-sm">
-                    <h5>Gửi dữ liệu thử nghiệm</h5>
-                    <hr>
-                    <input type="text" id="devId" class="form-control mb-2" placeholder="Tên trạm (VD: Tram_HaNoi)">
-                    <div class="row g-2 mb-2">
-                        <div class="col"><input type="number" id="lat" class="form-control" placeholder="Vĩ độ (Lat)"></div>
-                        <div class="col"><input type="number" id="lon" class="form-control" placeholder="Kinh độ (Lon)"></div>
+            <div class="col-md-9 position-relative">
+                <div id="map" class="shadow-lg"></div>
+                <div class="info-panel">
+                    <div class="card shadow">
+                        <div class="card-body">
+                            <h6>Hướng dẫn:</h6>
+                            <small class="text-muted">Click vào bản đồ để thiết lập vị trí mới cho thiết bị.</small>
+                        </div>
                     </div>
-                    <div class="row g-2 mb-3">
-                        <div class="col"><input type="number" id="aqi" class="form-control" placeholder="Chỉ số AQI"></div>
-                    </div>
-                    <button onclick="sendData()" class="btn btn-primary w-100 mb-2">📍 Gửi vị trí & Dữ liệu</button>
-                    <button onclick="clearAll()" class="btn btn-outline-danger w-100 mt-4">🗑️ Xóa sạch dữ liệu cũ</button>
                 </div>
             </div>
+            <div class="col-md-3 text-white">
+                <h4>📊 Danh sách trạm</h4>
+                <div id="status-list" class="mt-3"></div>
+                <button onclick="clearLogs()" class="btn btn-sm btn-outline-danger mt-4">Xóa lịch sử đo</button>
+            </div>
+        </div>
+    </div>
 
-            <div class="col-md-8">
-                <div class="bg-white p-3 rounded shadow-sm" style="height: 450px; overflow-y: auto;">
-                    <table class="table table-hover">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Trạm</th>
-                                <th>AQI</th>
-                                <th>Tọa độ</th>
-                                <th>Thời gian</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-body"></tbody>
-                    </table>
+    <div class="modal fade" id="registerModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">📍 Định vị thiết bị mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="regId" class="form-control mb-2" placeholder="Tên thiết bị (VD: TRAM_01)">
+                    <input type="text" id="regName" class="form-control mb-2" placeholder="Tên địa chỉ (VD: Nhà Bảo)">
+                    <div class="row">
+                        <div class="col"><input type="text" id="regLat" class="form-control" readonly></div>
+                        <div class="col"><input type="text" id="regLon" class="form-control" readonly></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button onclick="confirmRegister()" class="btn btn-primary">Lưu vị trí</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // 1. Khởi tạo bản đồ
-        var map = L.map('map').setView([16.0, 108.0], 6); // Nhìn toàn bộ Việt Nam
+        var map = L.map('map').setView([10.84, 106.81], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         var markerGroup = L.layerGroup().addTo(map);
+        var regModal = new bootstrap.Modal(document.getElementById('registerModal'));
 
-        // 2. Hàm lấy dữ liệu từ Server
-        async function refresh() {
-            const res = await fetch('/get-data');
-            const data = await res.json();
-            
-            const tbody = document.getElementById('table-body');
-            tbody.innerHTML = '';
-            markerGroup.clearLayers(); // Xóa các điểm cũ trên bản đồ
+        // KHI CLICK VÀO BẢN ĐỒ -> HIỆN POPUP
+        map.on('click', function(e) {
+            document.getElementById('regLat').value = e.latlng.lat.toFixed(6);
+            document.getElementById('regLon').value = e.latlng.lng.toFixed(6);
+            regModal.show();
+        });
 
-            data.forEach(row => {
-                // Đổ vào bảng
-                const tr = `<tr>
-                    <td><b>${row.device_id}</b></td>
-                    <td>${row.mq135}</td>
-                    <td><small>${row.lat}, ${row.lon}</small></td>
-                    <td>${new Date(row.created_at).toLocaleTimeString()}</td>
-                </tr>`;
-                tbody.innerHTML += tr;
-
-                // Vẽ lên bản đồ
-                if(row.lat && row.lon) {
-                    L.marker([row.lat, row.lon])
-                     .addTo(markerGroup)
-                     .bindPopup(`<b>${row.device_id}</b><br>AQI: ${row.mq135}`);
-                }
-            });
-        }
-
-        // 3. Hàm gửi dữ liệu từ Form (Giả lập thiết bị gửi)
-        async function sendData() {
-            const body = {
-                deviceId: document.getElementById('devId').value || "Unnamed",
-                lat: parseFloat(document.getElementById('lat').value),
-                lon: parseFloat(document.getElementById('lon').value),
-                mq135: parseFloat(document.getElementById('aqi').value) || 0,
-                temp: 25, humid: 60, dust: 10
+        async function confirmRegister() {
+            const data = {
+                deviceId: document.getElementById('regId').value,
+                locationName: document.getElementById('regName').value,
+                lat: parseFloat(document.getElementById('regLat').value),
+                lon: parseFloat(document.getElementById('regLon').value)
             };
-            await fetch('/update-sensor', {
+            await fetch('/register-device', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(body)
+                body: JSON.stringify(data)
             });
-            refresh();
+            regModal.hide();
+            updateMap();
         }
 
-        // 4. Hàm xóa sạch
-        async function clearAll() {
-            if(confirm("Bạn muốn xóa hết lịch sử dữ liệu?")) {
-                await fetch('/delete-all', { method: 'DELETE' });
-                refresh();
-            }
+        async function updateMap() {
+            const res = await fetch('/get-map-data');
+            const devices = await res.json();
+            
+            markerGroup.clearLayers();
+            const list = document.getElementById('status-list');
+            list.innerHTML = '';
+
+            devices.forEach(dev => {
+                const aqi = dev.mq135 || 0;
+                const color = aqi > 100 ? 'red' : 'green';
+                
+                // Vẽ Marker
+                L.circleMarker([dev.lat, dev.lon], { color: color, radius: 10 }).addTo(markerGroup)
+                 .bindPopup(`<b>${dev.location_name}</b><br>AQI: ${aqi}<br>ID: ${dev.device_id}`);
+
+                // Đổ vào danh sách bên phải
+                list.innerHTML += `
+                    <div class="card mb-2 text-dark">
+                        <div class="card-body p-2">
+                            <h6 class="m-0">${dev.location_name} <small class="text-muted">(${dev.device_id})</small></h6>
+                            <div class="d-flex justify-content-between">
+                                <span class="badge bg-secondary">AQI: ${aqi}</span>
+                                <small>${dev.created_at ? new Date(dev.created_at).toLocaleTimeString() : 'Ngoại tuyến'}</small>
+                            </div>
+                        </div>
+                    </div>`;
+            });
         }
 
-        setInterval(refresh, 5000);
-        refresh();
+        setInterval(updateMap, 5000);
+        updateMap();
     </script>
 </body>
 </html>
