@@ -106,6 +106,22 @@ app.delete('/clear-logs', async (req, res) => {
   }
 });
 
+// 7. API XÓA MỘT TRẠM CỤ THỂ
+app.delete('/delete-device/:id', async (req, res) => {
+  const deviceId = req.params.id;
+  try {
+    // Xóa lịch sử đo của trạm này trước (để làm sạch dữ liệu hoàn toàn)
+    await pool.query('DELETE FROM air_quality_logs WHERE device_id = $1', [deviceId]);
+
+    // Sau đó xóa trạm khỏi danh sách định vị (Registry)
+    await pool.query('DELETE FROM device_registry WHERE device_id = $1', [deviceId]);
+
+    res.status(200).send("Đã xóa trạm thành công!");
+  } catch (err) {
+    res.status(500).send("Lỗi khi xóa trạm: " + err.message);
+  }
+});
+
 app.listen(process.env.PORT || 3000, () => {
   console.log("Server đang chạy...");
 });
