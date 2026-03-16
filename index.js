@@ -5,7 +5,7 @@ const app = express();
 app.use(express.json());
 app.use(express.static('.'));
 
-// Kết nối tới Database của bạn trên Render
+// Kết nối tới Database trên Render
 const connectionString = "postgresql://aqi_system_user:uYgQokcxGdGplUFLxstVfth6cVkcRBU6@dpg-d6rckes50q8c73c096l0-a.singapore-postgres.render.com/aqi_system";
 
 const pool = new Pool({
@@ -13,10 +13,42 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// 1. KHỞI TẠO DATABASE (Tạo 2 bảng nếu chưa có)
+// ── BẢNG ĐIỂM GÃY AQI (Breakpoints) ──────────────────────────────────────────
+const breakpoints = {
+  pm25: [
+    { cLow: 0,     cHigh: 25,   iLow: 0,   iHigh: 50  },
+    { cLow: 25.1,  cHigh: 50,   iLow: 51,  iHigh: 100 },
+    { cLow: 50.1,  cHigh: 80,   iLow: 101, iHigh: 150 },
+    { cLow: 80.1,  cHigh: 150,  iLow: 151, iHigh: 200 },
+    { cLow: 150.1, cHigh: 250,  iLow: 201, iHigh: 300 },
+    { cLow: 250.1, cHigh: 500,  iLow: 301, iHigh: 500 }
+  ],
+  co: [
+    { cLow: 0,    cHigh: 10,  iLow: 0,   iHigh: 50  },
+    { cLow: 10.1, cHigh: 30,  iLow: 51,  iHigh: 100 },
+    { cLow: 30.1, cHigh: 45,  iLow: 101, iHigh: 150 },
+    { cLow: 45.1, cHigh: 60,  iLow: 151, iHigh: 200 },
+    { cLow: 60.1, cHigh: 90,  iLow: 201, iHigh: 300 },
+    { cLow: 90.1, cHigh: 150, iLow: 301, iHigh: 500 }
+  ]
+};
+
+// Hàm nội suy tuyến tính tính AQI thành phần
+function calculateSubAQI(concentration, type) {
+  if (!concentration || concentration < 0) return 0;
+  const bps = breakpoints[type];
+  for (let bp of bps) {
+    if (concentration >= bp.cLow && concentration <= bp.cHigh) {
+      const aqi = ((bp.iHigh - bp.iLow) / (bp.cHigh - bp.cLow)) * (concentration - bp.cLow) + bp.iLow;
+      return Math.round(aqi);
+    }
+  }
+  return 500; // Vượt ngưỡng tối đa
+}
+
+// 1. KHỞI TẠO DATABASE
 const initDb = async () => {
   try {
-    // Bảng lưu vị trí thiết bị (Registry)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS device_registry (
         device_id VARCHAR(50) PRIMARY KEY,
@@ -25,17 +57,28 @@ const initDb = async () => {
         location_name TEXT
       );
     `);
-    // Bảng lưu lịch sử cảm biến (Logs)
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS air_quality_logs (
         id SERIAL PRIMARY KEY,
         device_id VARCHAR(50),
         temp FLOAT,
         humid FLOAT,
-        mq135 FLOAT,
+        pm25 FLOAT,
+        co_ppm FLOAT,
+        aqi INTEGER,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    // ALTER TABLE để thêm cột mới nếu bảng cũ đã tồn tại
+    await pool.query(`ALTER TABLE air_quality_logs ADD COLUMN IF NOT EXISTS pm25 FLOAT;`);
+    await pool.query(`ALTER TABLE air_quality_logs ADD COLUMN IF NOT EXISTS co_ppm FLOAT;`);
+    await pool.query(`ALTER TABLE air_quality_logs ADD COLUMN IF NOT EXISTS aqi INTEGER;`);
+    await pool.query(`ALTER TABLE air_quality_logs ADD COLUMN IF NOT EXISTS humid FLOAT;`);
+    await pool.query(`ALTER TABLE air_quality_logs ADD COLUMN IF NOT EXISTS mq135 FLOAT;`);
+    await pool.query(`ALTER TABLE air_quality_logs ADD COLUMN IF NOT EXISTS mq2 FLOAT;`);
+
     console.log("--- Hệ thống Database đã sẵn sàng ---");
   } catch (err) {
     console.error("Lỗi khởi tạo DB:", err);
@@ -48,14 +91,14 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// 3. API ĐĂNG KÝ VỊ TRÍ (Lưu hoặc cập nhật vị trí thiết bị)
+// 3. API ĐĂNG KÝ VỊ TRÍ
 app.post('/register-device', async (req, res) => {
   const { deviceId, lat, lon, locationName } = req.body;
   try {
     const query = `
       INSERT INTO device_registry (device_id, lat, lon, location_name)
       VALUES ($1, $2, $3, $4)
-      ON CONFLICT (device_id) 
+      ON CONFLICT (device_id)
       DO UPDATE SET lat = $2, lon = $3, location_name = $4;
     `;
     await pool.query(query, [deviceId, lat, lon, locationName]);
@@ -66,14 +109,40 @@ app.post('/register-device', async (req, res) => {
 });
 
 // 4. API NHẬN DỮ LIỆU CẢM BIẾN (Từ ESP8266 gửi lên)
+// ESP8266 cần gửi JSON: { deviceId, temp, humid, pm25, co, mq135, mq2 }
+// pm25 (ug/m3), co (ppm)
 app.post('/update-sensor', async (req, res) => {
-  const { deviceId, temp, humid, mq135 } = req.body;
+  const { deviceId, temp, humid, pm25, co, mq135, mq2 } = req.body;
+
+  if (!deviceId) return res.status(400).send("Thiếu deviceId");
+
   try {
-    const query = `INSERT INTO air_quality_logs (device_id, temp, humid, mq135) VALUES ($1, $2, $3, $4)`;
-    await pool.query(query, [deviceId, temp, humid, mq135]);
-    console.log(`Dữ liệu mới từ: ${deviceId}`);
-    res.status(200).send("OK");
+    const val_pm25   = parseFloat(pm25) || 0;
+    const val_co_ppm = parseFloat(co) || 0;
+    const val_mq135  = parseFloat(mq135) || 0;
+    const val_mq2    = parseFloat(mq2) || 0;
+
+    // Chuyển đổi CO từ ppm sang mg/m3 theo công thức chuẩn
+    const val_co_mgm3 = val_co_ppm * 1.15;
+
+    // Tính điểm AQI từng thành phần
+    const aqi_pm25 = calculateSubAQI(val_pm25, 'pm25');
+    const aqi_co   = calculateSubAQI(val_co_mgm3, 'co');
+
+    // AQI chính thức = giá trị lớn nhất
+    const final_aqi = Math.max(aqi_pm25, aqi_co);
+
+    const query = `
+      INSERT INTO air_quality_logs (device_id, temp, humid, pm25, co_ppm, mq135, mq2, aqi)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `;
+    await pool.query(query, [deviceId, temp, humid, val_pm25, val_co_ppm, val_mq135, val_mq2, final_aqi]);
+
+    console.log(`[+] ${deviceId} | Temp: ${temp}°C | Humid: ${humid}% | PM2.5: ${val_pm25} | CO: ${val_co_ppm} | MQ135: ${val_mq135} | MQ2: ${val_mq2} | AQI: ${final_aqi}`);
+    res.status(200).json({ status: "OK", aqi: final_aqi });
+
   } catch (err) {
+    console.error("Lỗi lưu logs:", err);
     res.status(500).send("Lỗi lưu logs");
   }
 });
@@ -81,11 +150,10 @@ app.post('/update-sensor', async (req, res) => {
 // 5. API LẤY DỮ LIỆU TỔNG HỢP CHO BẢN ĐỒ (JOIN 2 bảng)
 app.get('/get-map-data', async (req, res) => {
   try {
-    // Lấy tất cả thiết bị đã đăng ký vị trí kèm theo dữ liệu cảm biến mới nhất của chúng
     const query = `
-      SELECT DISTINCT ON (r.device_id) 
+      SELECT DISTINCT ON (r.device_id)
              r.device_id, r.lat, r.lon, r.location_name,
-             l.temp, l.mq135, l.created_at
+             l.temp, l.humid, l.pm25, l.co_ppm, l.mq135, l.mq2, l.aqi, l.created_at
       FROM device_registry r
       LEFT JOIN air_quality_logs l ON r.device_id = l.device_id
       ORDER BY r.device_id, l.created_at DESC;
@@ -97,7 +165,7 @@ app.get('/get-map-data', async (req, res) => {
   }
 });
 
-// 6. XÓA DỮ LIỆU LỊCH SỬ
+// 6. XÓA LỊCH SỬ ĐO
 app.delete('/clear-logs', async (req, res) => {
   try {
     await pool.query('DELETE FROM air_quality_logs');
@@ -107,16 +175,12 @@ app.delete('/clear-logs', async (req, res) => {
   }
 });
 
-// 7. API XÓA MỘT TRẠM CỤ THỂ
+// 7. XÓA MỘT TRẠM CỤ THỂ
 app.delete('/delete-device/:id', async (req, res) => {
   const deviceId = req.params.id;
   try {
-    // Xóa lịch sử đo của trạm này trước (để làm sạch dữ liệu hoàn toàn)
     await pool.query('DELETE FROM air_quality_logs WHERE device_id = $1', [deviceId]);
-
-    // Sau đó xóa trạm khỏi danh sách định vị (Registry)
     await pool.query('DELETE FROM device_registry WHERE device_id = $1', [deviceId]);
-
     res.status(200).send("Đã xóa trạm thành công!");
   } catch (err) {
     res.status(500).send("Lỗi khi xóa trạm: " + err.message);

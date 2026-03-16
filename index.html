@@ -47,19 +47,12 @@
             <div class="map-legend">
                 <span class="legend-title">Chú thích AQI</span>
                 <div class="legend-items">
-                    <div class="legend-item">
-                        <div class="legend-dot" style="background:var(--good)"></div> Tốt (0–100)
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-dot" style="background:var(--moderate)"></div> Vừa (100–150)
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-dot" style="background:var(--bad)"></div> Xấu (&gt;150)
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-dot" style="background:radial-gradient(circle,red,blue)"></div> Vùng giao
-                        thoa
-                    </div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Tốt (0–50)</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#facc15"></div> TB (51–100)</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div> Kém (101–150)</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> Xấu (151–200)</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#9333ea"></div> Rất Xấu (201–300)</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:#7f1d1d"></div> Nguy Hại (301+)</div>
                 </div>
             </div>
         </div>
@@ -210,22 +203,31 @@
             updateMap();
         }
 
-        // ── AQI HELPERS ───────────────────────────────────────────
+        // ── AQI HELPERS (6 mức chuẩn) ────────────────────────────────
         function aqiColor(aqi) {
-            if (aqi > 150) return '#ef4444';
-            if (aqi > 100) return '#f97316';
-            return '#22c55e';
+            if (aqi > 300) return '#7f1d1d'; // Nguy hại
+            if (aqi > 200) return '#9333ea'; // Rất xấu
+            if (aqi > 150) return '#ef4444'; // Xấu
+            if (aqi > 100) return '#f97316'; // Kém
+            if (aqi > 50)  return '#facc15'; // Trung bình
+            return '#22c55e';                // Tốt
         }
 
         function aqiBadgeClass(aqi) {
+            if (aqi > 300) return 'aqi-hazardous';
+            if (aqi > 200) return 'aqi-very-bad';
             if (aqi > 150) return 'aqi-bad';
             if (aqi > 100) return 'aqi-moderate';
+            if (aqi > 50)  return 'aqi-medium';
             return 'aqi-good';
         }
 
         function aqiLabel(aqi) {
+            if (aqi > 300) return 'Nguy Hại';
+            if (aqi > 200) return 'Rất Xấu';
             if (aqi > 150) return 'Xấu';
-            if (aqi > 100) return 'Vừa';
+            if (aqi > 100) return 'Kém';
+            if (aqi > 50)  return 'Trung Bình';
             return 'Tốt';
         }
 
@@ -254,14 +256,14 @@
             const listWrap = document.getElementById('status-list');
             listWrap.innerHTML = '';
 
-            const aqiValues = devices.map(d => d.mq135 || 0).filter(v => v > 0);
+            const aqiValues = devices.map(d => d.aqi || 0).filter(v => v > 0);
 
             // Stats
             document.getElementById('stat-total').textContent = devices.length;
             if (aqiValues.length) {
                 const avg = Math.round(aqiValues.reduce((a, b) => a + b, 0) / aqiValues.length);
                 document.getElementById('stat-avg').textContent = avg;
-                document.getElementById('stat-avg').className = 'stat-value ' + (avg > 150 ? 'bad' : avg > 100 ? 'moderate' : 'good');
+                document.getElementById('stat-avg').className = 'stat-value ' + (avg > 300 ? 'bad' : avg > 150 ? 'bad' : avg > 100 ? 'moderate' : 'good');
                 document.getElementById('stat-max').textContent = Math.max(...aqiValues);
                 document.getElementById('stat-min').textContent = Math.min(...aqiValues);
             } else {
@@ -288,22 +290,62 @@
 
             devices.forEach(dev => {
                 if (dev.lat && dev.lon) {
-                    const aqi = dev.mq135 || 0;
+                    const aqi = dev.aqi || 0;
                     const color = aqiColor(aqi);
+                    const temp  = dev.temp != null  ? dev.temp.toFixed(1)  : '--';
+                    const humid = dev.humid != null ? dev.humid.toFixed(1) : '--';
+                    const pm25  = dev.pm25 != null  ? dev.pm25.toFixed(1)  : '--';
+                    const co    = dev.co_ppm != null ? dev.co_ppm.toFixed(2) : '--';
+                    const mq135 = dev.mq135 != null ? dev.mq135.toFixed(0) : '--';
+                    const mq2   = dev.mq2 != null   ? dev.mq2.toFixed(0)   : '--';
 
                     // 1. Heatmap data point
                     heatData.push([dev.lat, dev.lon, aqi / 100]);
 
                     const popupContent = `
-                    <div style="font-family:'Inter',sans-serif; min-width:160px;">
-                        <div style="font-weight:700; font-size:14px; margin-bottom:4px;">${dev.location_name}</div>
-                        <div style="font-size:12px; color:#718096;">ID: ${dev.device_id}</div>
-                        <div style="margin-top:8px; display:flex; align-items:center; gap:8px;">
-                            <span style="background:${color};color:#fff;padding:3px 10px;border-radius:12px;font-weight:700;font-size:13px;">AQI ${aqi}</span>
-                            <span style="font-size:11px;color:#718096;">${aqiLabel(aqi)}</span>
+                    <div class="popup-card">
+                        <div class="popup-header">
+                            <div>
+                                <div class="popup-title">${dev.location_name}</div>
+                                <div class="popup-subtitle">ID: ${dev.device_id}</div>
+                            </div>
+                            <button class="custom-close-btn" onclick="window.closeMap()" title="Đóng">×</button>
                         </div>
-                        <div style="font-size:10px; color:#a0aec0; margin-top:6px;">
-                            ${dev.created_at ? new Date(dev.created_at).toLocaleString('vi-VN') : 'Đang Ngoại tuyến'}
+                        <div class="popup-aqi" style="background:${color}20; border-left: 3px solid ${color};">
+                            <span class="popup-aqi-num" style="color:${color};">${aqi}</span>
+                            <div>
+                                <div class="popup-aqi-label" style="color:${color}">${aqiLabel(aqi)}</div>
+                                <div class="popup-aqi-sub">Chỉ số AQI</div>
+                            </div>
+                        </div>
+                        <div class="popup-grid">
+                            <div class="popup-item">
+                                <span class="popup-item-label">🌡️ Nhiệt độ</span>
+                                <span class="popup-item-value">${temp}<small>°C</small></span>
+                            </div>
+                            <div class="popup-item">
+                                <span class="popup-item-label">💧 Độ ẩm</span>
+                                <span class="popup-item-value">${humid}<small>%</small></span>
+                            </div>
+                            <div class="popup-item">
+                                <span class="popup-item-label">🌫️ PM2.5</span>
+                                <span class="popup-item-value">${pm25}<small>μg</small></span>
+                            </div>
+                            <div class="popup-item">
+                                <span class="popup-item-label">💨 CO</span>
+                                <span class="popup-item-value">${co}<small>ppm</small></span>
+                            </div>
+                            <div class="popup-item popup-item-danger">
+                                <span class="popup-item-label">⚠️ MQ-135</span>
+                                <span class="popup-item-value">${mq135}<small>NH3</small></span>
+                            </div>
+                            <div class="popup-item popup-item-danger">
+                                <span class="popup-item-label">🔥 MQ-2</span>
+                                <span class="popup-item-value">${mq2}<small>Gas</small></span>
+                            </div>
+                        </div>
+                        <div class="popup-footer">
+                            ${dev.created_at ? new Date(dev.created_at).toLocaleString('vi-VN') : '⚡ Ngoại tuyến'}
                         </div>
                     </div>`;
 
@@ -346,7 +388,7 @@
                     
                     if (isVisible) {
                         listWrap.innerHTML += `
-                        <div class="station-card" onclick="map.setView([${dev.lat},${dev.lon}],15)">
+                        <div class="station-card" onclick="focusStation('${dev.device_id}')">
                             <div class="station-top">
                                 <div>
                                     <div class="station-name">${dev.location_name}</div>
@@ -354,8 +396,17 @@
                                 </div>
                                 <div style="display: flex; gap: 8px; align-items: center;">
                                     <span class="aqi-badge ${aqiBadgeClass(aqi)}">AQI ${aqi}</span>
-                                    <button onclick="deleteDevice('${dev.device_id}', event)" style="background:none; border:none; cursor:pointer; font-size:14px; padding:2px; line-height:1;" title="Xóa trạm này">🗑️</button>
+                                    <button onclick="event.stopPropagation(); deleteDevice('${dev.device_id}', event)" style="background:none; border:none; cursor:pointer; font-size:14px; padding:2px; line-height:1;" title="Xóa trạm này">🗑️</button>
                                 </div>
+                            </div>
+                            <div style="display:flex; gap:5px; margin-top:6px; flex-wrap:wrap;">
+                                <span class="param-badge temp-badge">🌡️ ${temp}°C</span>
+                                <span class="param-badge humid-badge">💧 ${humid}%</span>
+                                <span class="param-badge pm-badge">PM2.5: ${pm25}</span>
+                                <span class="param-badge co-badge">CO: ${co}</span>
+                            </div>
+                            <div style="margin-top:4px; font-size:10px; color:#c53030;">
+                                MQ135: ${mq135} | MQ2: ${mq2}
                             </div>
                             <div class="station-meta">
                                 <span class="station-time">${dev.created_at ? new Date(dev.created_at).toLocaleTimeString('vi-VN') : '⚡ Ngoại tuyến'}</span>
@@ -380,6 +431,33 @@
 
         function filterStations() {
             renderUI();
+        }
+
+        // Hàm đóng popup dùng trong button bên trong popup HTML
+        window.closeMap = () => map.closePopup();
+
+        // ── FOCUS STATION (flyTo + openPopup + blink) ────────────────
+        function focusStation(id) {
+            const dev = cachedDevices.find(d => d.device_id === id);
+            if (!dev || !dev.lat || !dev.lon) return;
+
+            // Lướt mượt tới trạm giống Google Maps
+            map.flyTo([dev.lat, dev.lon], 15, { duration: 1.2 });
+
+            if (mapMarkers[id] && mapMarkers[id].marker) {
+                const markerEl = mapMarkers[id].marker.getElement();
+
+                // Bận sáng chớp nháy (Blink) trong 3 giây để dễ nhận diện
+                if (markerEl) {
+                    markerEl.classList.add('marker-blink');
+                    setTimeout(() => markerEl.classList.remove('marker-blink'), 3000);
+                }
+
+                // Sau khi bản đồ bay đến nơi thì mở popup
+                setTimeout(() => {
+                    mapMarkers[id].marker.openPopup();
+                }, 1300); // chờ flyTo hoàn tất (~1.2s)
+            }
         }
 
         // ── CLEAR LOGS ────────────────────────────────────────────

@@ -321,6 +321,37 @@ header {
 .station-card:hover {
     box-shadow: var(--shadow-md);
     transform: translateY(-1px);
+    background: #f8faff;
+}
+
+/* ─── PARAM BADGES ─── */
+.param-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.temp-badge {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.humid-badge {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.pm-badge {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.co-badge {
+    background: #fee2e2;
+    color: #991b1b;
 }
 
 .station-top {
@@ -355,6 +386,11 @@ header {
     color: #15803d;
 }
 
+.aqi-medium {
+    background: #fef9c3;
+    color: #854d0e;
+}
+
 .aqi-moderate {
     background: #fff7ed;
     color: #c2410c;
@@ -363,6 +399,16 @@ header {
 .aqi-bad {
     background: #fee2e2;
     color: #b91c1c;
+}
+
+.aqi-very-bad {
+    background: #f3e8ff;
+    color: #7e22ce;
+}
+
+.aqi-hazardous {
+    background: #450a0a;
+    color: #fca5a5;
 }
 
 .station-meta {
@@ -583,4 +629,131 @@ header {
         flex: none !important;
         height: 500px; /* Cố định chiều cao danh sách trạm trên mobile để vẫn scroll được */
     }
+}
+
+/* ─── LEAFLET POPUP REDESIGN ─── */
+.popup-card {
+    font-family: 'Inter', sans-serif;
+    width: 230px;
+}
+
+.popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.popup-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.popup-subtitle {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.custom-close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    color: #a0aec0;
+    line-height: 1;
+    padding: 0 0 0 8px;
+    transition: color .15s;
+    flex-shrink: 0;
+}
+
+.custom-close-btn:hover {
+    color: var(--bad);
+}
+
+.popup-aqi {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 10px;
+}
+
+.popup-aqi-num {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.popup-aqi-label {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.popup-aqi-sub {
+    font-size: 10px;
+    color: #a0aec0;
+}
+
+.popup-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.popup-item {
+    background: #f8fafc;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid #edf2f7;
+}
+
+.popup-item-danger {
+    border-color: #fed7d7;
+    background: #fff5f5;
+}
+
+.popup-item-label {
+    display: block;
+    font-size: 10px;
+    color: #a0aec0;
+    margin-bottom: 3px;
+}
+
+.popup-item-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.popup-item-danger .popup-item-value {
+    color: #c53030;
+}
+
+.popup-item-value small {
+    font-size: 10px;
+    font-weight: 400;
+    color: #a0aec0;
+    margin-left: 2px;
+}
+
+.popup-footer {
+    font-size: 10px;
+    color: #a0aec0;
+    text-align: right;
+}
+
+/* ─── MARKER BLINK ANIMATION ─── */
+@keyframes markerBlink {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    40%       { opacity: 0.3; transform: scale(1.6); }
+    70%       { opacity: 1; transform: scale(0.85); }
+}
+
+.marker-blink {
+    animation: markerBlink 0.6s ease-in-out 5;
 }
