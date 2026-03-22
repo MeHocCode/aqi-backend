@@ -130,12 +130,12 @@
             </div>
             <div class="modal-body">
                 <div>
-                    <label for="regId">Tên thiết bị</label>
-                    <input type="text" id="regId" class="form-input" placeholder="VD: TRAM_01">
+                    <label for="regId">ID thiết bị (Khớp với mã ID ESP gửi bản tin)</label>
+                    <input type="text" id="regId" class="form-input" placeholder="VD: TRAM_AQI_01">
                 </div>
                 <div>
-                    <label for="regName">Địa chỉ</label>
-                    <input type="text" id="regName" class="form-input" placeholder="VD: Nhà Bảo, Q.9">
+                    <label for="regName">Tên trạm / Địa chỉ (Người dùng đặt)</label>
+                    <input type="text" id="regName" class="form-input" placeholder="VD: Ban Công Tầng 2, Q.9">
                 </div>
                 <div class="coord-row">
                     <div>
@@ -383,7 +383,8 @@
                     }
 
                     // 4. Sidebar list item
-                    const isVisible = dev.location_name.toLowerCase().includes(searchTerm) || 
+                    const locName = dev.location_name || 'Chưa đặt tên';
+                    const isVisible = locName.toLowerCase().includes(searchTerm) || 
                                     dev.device_id.toLowerCase().includes(searchTerm);
                     
                     if (isVisible) {
@@ -391,8 +392,8 @@
                         <div class="station-card" onclick="focusStation('${dev.device_id}')">
                             <div class="station-top">
                                 <div>
-                                    <div class="station-name">${dev.location_name}</div>
-                                    <div class="station-id">${dev.device_id}</div>
+                                    <div class="station-name">${dev.location_name || 'Chưa đặt tên'}</div>
+                                    <div class="station-id">ID: ${dev.device_id}</div>
                                 </div>
                                 <div style="display: flex; gap: 8px; align-items: center;">
                                     <span class="aqi-badge ${aqiBadgeClass(aqi)}">AQI ${aqi}</span>
