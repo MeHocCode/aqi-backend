@@ -441,18 +441,10 @@
             const dev = cachedDevices.find(d => d.device_id === id);
             if (!dev || !dev.lat || !dev.lon) return;
 
-            // Di chuyển thẳng tới vị trí trạm (không delay)
-            map.setView([dev.lat, dev.lon], 15);
+            // Di chuyển thẳng tới vị trí trạm (tuyệt đối không delay)
+            map.setView([dev.lat, dev.lon], 15, { animate: false });
 
             if (mapMarkers[id] && mapMarkers[id].marker) {
-                const markerEl = mapMarkers[id].marker.getElement();
-
-                // Bận sáng chớp nháy (Blink) trong 3 giây để dễ nhận diện
-                if (markerEl) {
-                    markerEl.classList.add('marker-blink');
-                    setTimeout(() => markerEl.classList.remove('marker-blink'), 3000);
-                }
-
                 // Mở popup ngay lập tức
                 mapMarkers[id].marker.openPopup();
             }
