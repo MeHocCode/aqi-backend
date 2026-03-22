@@ -203,6 +203,64 @@
             updateMap();
         }
 
+        // ── SENSOR STATUS HELPERS ────────────────────────────────
+        function getTempStatus(t) {
+            if (t == '--') return 'popup-item';
+            t = parseFloat(t);
+            if (t < 18 || t > 35) return 'popup-item-danger';
+            if (t > 30) return 'popup-item-warning';
+            return 'popup-item-safe';
+        }
+        function getHumidStatus(h) {
+            if (h == '--') return 'popup-item';
+            h = parseFloat(h);
+            if (h < 30 || h > 85) return 'popup-item-danger';
+            if (h < 40 || h > 70) return 'popup-item-warning';
+            return 'popup-item-safe';
+        }
+        function getCOStatus(c) {
+            if (c == '--') return 'popup-item';
+            c = parseFloat(c);
+            if (c > 150) return 'popup-item-danger';
+            return 'popup-item-safe';
+        }
+        function getCOLabel(c) {
+            if (c == '--') return '';
+            c = parseFloat(c);
+            if (c > 150) return 'Ô nhiễm';
+            return 'Tốt';
+        }
+
+        function getMQ2Status(v) {
+            if (v == '--') return 'popup-item';
+            v = parseFloat(v);
+            if (v > 500) return 'popup-item-danger';
+            if (v > 250) return 'popup-item-warning';
+            return 'popup-item-safe';
+        }
+        function getMQ2Label(v) {
+            if (v == '--') return '';
+            v = parseFloat(v);
+            if (v > 500) return 'Nguy hiểm';
+            if (v > 250) return 'Cảnh báo';
+            return 'An toàn';
+        }
+
+        function getMQ135Status(v) {
+            if (v == '--') return 'popup-item';
+            v = parseFloat(v);
+            if (v > 600) return 'popup-item-danger';
+            if (v > 300) return 'popup-item-warning';
+            return 'popup-item-safe';
+        }
+        function getMQ135Label(v) {
+            if (v == '--') return '';
+            v = parseFloat(v);
+            if (v > 600) return 'Rất kém';
+            if (v > 300) return 'Kém';
+            return 'Tốt';
+        }
+
         // ── AQI HELPERS (6 mức chuẩn) ────────────────────────────────
         function aqiColor(aqi) {
             if (aqi > 300) return '#7f1d1d'; // Nguy hại
@@ -294,7 +352,6 @@
                     const color = aqiColor(aqi);
                     const temp  = dev.temp != null  ? dev.temp.toFixed(1)  : '--';
                     const humid = dev.humid != null ? dev.humid.toFixed(1) : '--';
-                    const pm25  = dev.pm25 != null  ? dev.pm25.toFixed(1)  : '--';
                     const co    = dev.co_ppm != null ? dev.co_ppm.toFixed(2) : '--';
                     const mq135 = dev.mq135 != null ? dev.mq135.toFixed(0) : '--';
                     const mq2   = dev.mq2 != null   ? dev.mq2.toFixed(0)   : '--';
@@ -319,28 +376,24 @@
                             </div>
                         </div>
                         <div class="popup-grid">
-                            <div class="popup-item">
+                            <div class="popup-item ${getTempStatus(temp)}">
                                 <span class="popup-item-label">🌡️ Nhiệt độ</span>
                                 <span class="popup-item-value">${temp}<small>°C</small></span>
                             </div>
-                            <div class="popup-item">
+                            <div class="popup-item ${getHumidStatus(humid)}">
                                 <span class="popup-item-label">💧 Độ ẩm</span>
                                 <span class="popup-item-value">${humid}<small>%</small></span>
                             </div>
-                            <div class="popup-item">
-                                <span class="popup-item-label">🌫️ PM2.5</span>
-                                <span class="popup-item-value">${pm25}<small>μg</small></span>
-                            </div>
-                            <div class="popup-item">
-                                <span class="popup-item-label">💨 CO</span>
+                            <div class="popup-item ${getCOStatus(co)}">
+                                <span class="popup-item-label">💨 Khí CO (<small>${getCOLabel(co)}</small>)</span>
                                 <span class="popup-item-value">${co}<small>ppm</small></span>
                             </div>
-                            <div class="popup-item popup-item-danger">
-                                <span class="popup-item-label">⚠️ MQ-135</span>
+                            <div class="popup-item ${getMQ135Status(mq135)}">
+                                <span class="popup-item-label">⚠️ MQ-135 (<small>${getMQ135Label(mq135)}</small>)</span>
                                 <span class="popup-item-value">${mq135}<small>NH3</small></span>
                             </div>
-                            <div class="popup-item popup-item-danger">
-                                <span class="popup-item-label">🔥 MQ-2</span>
+                            <div class="popup-item ${getMQ2Status(mq2)}">
+                                <span class="popup-item-label">🔥 MQ-2 (<small>${getMQ2Label(mq2)}</small>)</span>
                                 <span class="popup-item-value">${mq2}<small>Gas</small></span>
                             </div>
                         </div>
@@ -401,13 +454,13 @@
                                 </div>
                             </div>
                             <div style="display:flex; gap:5px; margin-top:6px; flex-wrap:wrap;">
-                                <span class="param-badge temp-badge">🌡️ ${temp}°C</span>
-                                <span class="param-badge humid-badge">💧 ${humid}%</span>
-                                <span class="param-badge pm-badge">PM2.5: ${pm25}</span>
-                                <span class="param-badge co-badge">CO: ${co}</span>
+                                <span class="param-badge" style="background:${getTempStatus(temp) == 'popup-item-danger' ? '#fee2e2' : getTempStatus(temp) == 'popup-item-warning' ? '#fff7ed' : '#dbeafe'}; color:${getTempStatus(temp) == 'popup-item-danger' ? '#991b1b' : getTempStatus(temp) == 'popup-item-warning' ? '#c2410c' : '#1e40af'}">🌡️ ${temp}°C</span>
+                                <span class="param-badge" style="background:${getHumidStatus(humid) == 'popup-item-danger' ? '#fee2e2' : getHumidStatus(humid) == 'popup-item-warning' ? '#fff7ed' : '#d1fae5'}; color:${getHumidStatus(humid) == 'popup-item-danger' ? '#991b1b' : getHumidStatus(humid) == 'popup-item-warning' ? '#c2410c' : '#065f46'}">💧 ${humid}%</span>
+                                <span class="param-badge" style="background:${getCOStatus(co) == 'popup-item-danger' ? '#fee2e2' : getCOStatus(co) == 'popup-item-warning' ? '#fff7ed' : '#f0fdf4'}; color:${getCOStatus(co) == 'popup-item-danger' ? '#991b1b' : getCOStatus(co) == 'popup-item-warning' ? '#c2410c' : '#15803d'}">💨 CO: ${co}</span>
                             </div>
-                            <div style="margin-top:4px; font-size:10px; color:#c53030;">
-                                MQ135: ${mq135} | MQ2: ${mq2}
+                            <div style="margin-top:4px; font-size:10px; font-weight: 500;">
+                                <span style="color:${getMQ135Status(mq135) == 'popup-item-safe' ? '#15803d' : '#b91c1c'}">MQ135: ${mq135} (${getMQ135Label(mq135)})</span> | 
+                                <span style="color:${getMQ2Status(mq2) == 'popup-item-safe' ? '#15803d' : '#b91c1c'}">MQ2: ${mq2} (${getMQ2Label(mq2)})</span>
                             </div>
                             <div class="station-meta">
                                 <span class="station-time">${dev.created_at ? new Date(dev.created_at).toLocaleTimeString('vi-VN') : '⚡ Ngoại tuyến'}</span>

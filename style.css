@@ -344,10 +344,6 @@ header {
     color: #065f46;
 }
 
-.pm-badge {
-    background: #fef3c7;
-    color: #92400e;
-}
 
 .co-badge {
     background: #fee2e2;
@@ -710,10 +706,21 @@ header {
     padding: 6px 8px;
     border-radius: 6px;
     border: 1px solid #edf2f7;
+    transition: all 0.3s ease;
+}
+
+.popup-item-safe {
+    border-left: 4px solid var(--good);
+    background: #f0fdf4;
+}
+
+.popup-item-warning {
+    border-left: 4px solid var(--moderate);
+    background: #fffaf5;
 }
 
 .popup-item-danger {
-    border-color: #fed7d7;
+    border-left: 4px solid var(--bad);
     background: #fff5f5;
 }
 

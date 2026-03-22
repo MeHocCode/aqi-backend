@@ -15,14 +15,7 @@ const pool = new Pool({
 
 // ── BẢNG ĐIỂM GÃY AQI (Breakpoints) ──────────────────────────────────────────
 const breakpoints = {
-  pm25: [
-    { cLow: 0,     cHigh: 25,   iLow: 0,   iHigh: 50  },
-    { cLow: 25.1,  cHigh: 50,   iLow: 51,  iHigh: 100 },
-    { cLow: 50.1,  cHigh: 80,   iLow: 101, iHigh: 150 },
-    { cLow: 80.1,  cHigh: 150,  iLow: 151, iHigh: 200 },
-    { cLow: 150.1, cHigh: 250,  iLow: 201, iHigh: 300 },
-    { cLow: 250.1, cHigh: 500,  iLow: 301, iHigh: 500 }
-  ],
+  // PM2.5 đã bị loại bỏ khỏi thiết bị phần cứng
   co: [
     { cLow: 0,    cHigh: 10,  iLow: 0,   iHigh: 50  },
     { cLow: 10.1, cHigh: 30,  iLow: 51,  iHigh: 100 },
@@ -112,12 +105,11 @@ app.post('/register-device', async (req, res) => {
 // ESP8266 cần gửi JSON: { deviceId, temp, humid, pm25, co, mq135, mq2 }
 // pm25 (ug/m3), co (ppm)
 app.post('/update-sensor', async (req, res) => {
-  const { deviceId, temp, humid, pm25, co, mq135, mq2 } = req.body;
+  const { deviceId, temp, humid, co, mq135, mq2 } = req.body;
 
   if (!deviceId) return res.status(400).send("Thiếu deviceId");
 
   try {
-    const val_pm25   = parseFloat(pm25) || 0;
     const val_co_ppm = parseFloat(co) || 0;
     const val_mq135  = parseFloat(mq135) || 0;
     const val_mq2    = parseFloat(mq2) || 0;
@@ -125,20 +117,16 @@ app.post('/update-sensor', async (req, res) => {
     // Chuyển đổi CO từ ppm sang mg/m3 theo công thức chuẩn
     const val_co_mgm3 = val_co_ppm * 1.15;
 
-    // Tính điểm AQI từng thành phần
-    const aqi_pm25 = calculateSubAQI(val_pm25, 'pm25');
-    const aqi_co   = calculateSubAQI(val_co_mgm3, 'co');
-
-    // AQI chính thức = giá trị lớn nhất
-    const final_aqi = Math.max(aqi_pm25, aqi_co);
+    // Tính điểm AQI thành phần cho CO (Dùng thay thế cho bụi mịn đã bỏ)
+    const final_aqi = calculateSubAQI(val_co_mgm3, 'co');
 
     const query = `
-      INSERT INTO air_quality_logs (device_id, temp, humid, pm25, co_ppm, mq135, mq2, aqi)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO air_quality_logs (device_id, temp, humid, co_ppm, mq135, mq2, aqi)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
     `;
-    await pool.query(query, [deviceId, temp, humid, val_pm25, val_co_ppm, val_mq135, val_mq2, final_aqi]);
+    await pool.query(query, [deviceId, temp, humid, val_co_ppm, val_mq135, val_mq2, final_aqi]);
 
-    console.log(`[+] ${deviceId} | Temp: ${temp}°C | Humid: ${humid}% | PM2.5: ${val_pm25} | CO: ${val_co_ppm} | MQ135: ${val_mq135} | MQ2: ${val_mq2} | AQI: ${final_aqi}`);
+    console.log(`[+] ${deviceId} | Temp: ${temp}°C | Humid: ${humid}% | CO: ${val_co_ppm} | MQ135: ${val_mq135} | MQ2: ${val_mq2} | AQI: ${final_aqi}`);
     res.status(200).json({ status: "OK", aqi: final_aqi });
 
   } catch (err) {
@@ -153,7 +141,7 @@ app.get('/get-map-data', async (req, res) => {
     const query = `
       SELECT DISTINCT ON (r.device_id)
              r.device_id, r.lat, r.lon, r.location_name,
-             l.temp, l.humid, l.pm25, l.co_ppm, l.mq135, l.mq2, l.aqi, l.created_at
+             l.temp, l.humid, l.co_ppm, l.mq135, l.mq2, l.aqi, l.created_at
       FROM device_registry r
       LEFT JOIN air_quality_logs l ON r.device_id = l.device_id
       ORDER BY r.device_id, l.created_at DESC;
