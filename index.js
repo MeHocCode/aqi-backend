@@ -13,30 +13,36 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// ── BẢNG ĐIỂM GÃY AQI (Breakpoints) ──────────────────────────────────────────
+// ── BẢNG ĐIỂM GÃY AQI TÙY CHỈNH (Dựa trên giá trị RAW của cảm biến) ────────────────
 const breakpoints = {
-  // PM2.5 đã bị loại bỏ khỏi thiết bị phần cứng
+  mq2: [
+    { cLow: 0,     cHigh: 250,  iLow: 0,   iHigh: 50  }, // An toàn
+    { cLow: 250.1, cHigh: 500,  iLow: 51,  iHigh: 150 }, // Cảnh báo
+    { cLow: 500.1, cHigh: 1024, iLow: 151, iHigh: 500 }  // Nguy hiểm
+  ],
   co: [
-    { cLow: 0,    cHigh: 10,  iLow: 0,   iHigh: 50  },
-    { cLow: 10.1, cHigh: 30,  iLow: 51,  iHigh: 100 },
-    { cLow: 30.1, cHigh: 45,  iLow: 101, iHigh: 150 },
-    { cLow: 45.1, cHigh: 60,  iLow: 151, iHigh: 200 },
-    { cLow: 60.1, cHigh: 90,  iLow: 201, iHigh: 300 },
-    { cLow: 90.1, cHigh: 150, iLow: 301, iHigh: 500 }
+    { cLow: 0,     cHigh: 150,  iLow: 0,   iHigh: 100 }, // Tốt
+    { cLow: 150.1, cHigh: 1024, iLow: 101, iHigh: 500 }  // Ô nhiễm
+  ],
+  mq135: [
+    { cLow: 0,     cHigh: 300,  iLow: 0,   iHigh: 50  }, // Tốt
+    { cLow: 300.1, cHigh: 600,  iLow: 51,  iHigh: 200 }, // Kém
+    { cLow: 600.1, cHigh: 1024, iLow: 201, iHigh: 500 }  // Rất kém
   ]
 };
 
-// Hàm nội suy tuyến tính tính AQI thành phần
+// Hàm tính AQI thành phần dựa trên giá trị Raw
 function calculateSubAQI(concentration, type) {
   if (!concentration || concentration < 0) return 0;
   const bps = breakpoints[type];
+  if (!bps) return 0;
   for (let bp of bps) {
     if (concentration >= bp.cLow && concentration <= bp.cHigh) {
       const aqi = ((bp.iHigh - bp.iLow) / (bp.cHigh - bp.cLow)) * (concentration - bp.cLow) + bp.iLow;
       return Math.round(aqi);
     }
   }
-  return 500; // Vượt ngưỡng tối đa
+  return 500; 
 }
 
 // 1. KHỞI TẠO DATABASE
@@ -110,23 +116,25 @@ app.post('/update-sensor', async (req, res) => {
   if (!deviceId) return res.status(400).send("Thiếu deviceId");
 
   try {
-    const val_co_ppm = parseFloat(co) || 0;
-    const val_mq135  = parseFloat(mq135) || 0;
-    const val_mq2    = parseFloat(mq2) || 0;
+    const val_co    = parseFloat(co) || 0;
+    const val_mq135 = parseFloat(mq135) || 0;
+    const val_mq2   = parseFloat(mq2) || 0;
 
-    // Chuyển đổi CO từ ppm sang mg/m3 theo công thức chuẩn
-    const val_co_mgm3 = val_co_ppm * 1.15;
+    // Tính điểm AQI thành phần dựa trên bảng giá trị Raw mới
+    const aqi_mq2   = calculateSubAQI(val_mq2, 'mq2');
+    const aqi_co    = calculateSubAQI(val_co, 'co');
+    const aqi_mq135 = calculateSubAQI(val_mq135, 'mq135');
 
-    // Tính điểm AQI thành phần cho CO (Dùng thay thế cho bụi mịn đã bỏ)
-    const final_aqi = calculateSubAQI(val_co_mgm3, 'co');
+    // AQI tổng hợp là giá trị cao nhất (nguy hiểm nhất) trong các cảm biến
+    const final_aqi = Math.max(aqi_mq2, aqi_co, aqi_mq135);
 
     const query = `
       INSERT INTO air_quality_logs (device_id, temp, humid, co_ppm, mq135, mq2, aqi)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
     `;
-    await pool.query(query, [deviceId, temp, humid, val_co_ppm, val_mq135, val_mq2, final_aqi]);
+    await pool.query(query, [deviceId, temp, humid, val_co, val_mq135, val_mq2, final_aqi]);
 
-    console.log(`[+] ${deviceId} | Temp: ${temp}°C | Humid: ${humid}% | CO: ${val_co_ppm} | MQ135: ${val_mq135} | MQ2: ${val_mq2} | AQI: ${final_aqi}`);
+    console.log(`[+] ${deviceId} | AQI: ${final_aqi} | Raw -> CO: ${val_co}, MQ135: ${val_mq135}, MQ2: ${val_mq2}`);
     res.status(200).json({ status: "OK", aqi: final_aqi });
 
   } catch (err) {
