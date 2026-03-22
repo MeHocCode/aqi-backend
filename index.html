@@ -441,8 +441,8 @@
             const dev = cachedDevices.find(d => d.device_id === id);
             if (!dev || !dev.lat || !dev.lon) return;
 
-            // Lướt mượt tới trạm giống Google Maps
-            map.flyTo([dev.lat, dev.lon], 15, { duration: 1.2 });
+            // Di chuyển thẳng tới vị trí trạm (không delay)
+            map.setView([dev.lat, dev.lon], 15);
 
             if (mapMarkers[id] && mapMarkers[id].marker) {
                 const markerEl = mapMarkers[id].marker.getElement();
@@ -453,10 +453,8 @@
                     setTimeout(() => markerEl.classList.remove('marker-blink'), 3000);
                 }
 
-                // Sau khi bản đồ bay đến nơi thì mở popup
-                setTimeout(() => {
-                    mapMarkers[id].marker.openPopup();
-                }, 1300); // chờ flyTo hoàn tất (~1.2s)
+                // Mở popup ngay lập tức
+                mapMarkers[id].marker.openPopup();
             }
         }
 
