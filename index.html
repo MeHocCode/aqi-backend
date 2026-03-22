@@ -436,16 +436,18 @@
         // Hàm đóng popup dùng trong button bên trong popup HTML
         window.closeMap = () => map.closePopup();
 
-        // ── FOCUS STATION (flyTo + openPopup + blink) ────────────────
+        // ── FOCUS STATION (Nhảy thẳng tới vị trí - Teleport) ────────────────
         function focusStation(id) {
             const dev = cachedDevices.find(d => d.device_id === id);
             if (!dev || !dev.lat || !dev.lon) return;
 
-            // Di chuyển thẳng tới vị trí trạm (tuyệt đối không delay)
-            map.setView([dev.lat, dev.lon], 15, { animate: false });
+            // Sử dụng setView với animate: false để nhảy thẳng tới vị trí ngay lập tức
+            map.setView([dev.lat, dev.lon], 16, { 
+                animate: false 
+            });
 
             if (mapMarkers[id] && mapMarkers[id].marker) {
-                // Mở popup ngay lập tức
+                // Mở popup thông số ngay sau khi nhảy tới
                 mapMarkers[id].marker.openPopup();
             }
         }
