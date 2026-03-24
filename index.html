@@ -240,6 +240,20 @@
             return 'Tốt';
         }
 
+        // ── NEW BADGE STYLE HELPER ──────────────────────────────────
+        function getBadgeStyle(status) {
+            const styles = {
+                'popup-item-good':      { bg: '#f0fdf4', text: '#15803d' },
+                'popup-item-medium':    { bg: '#fefce8', text: '#854d0e' },
+                'popup-item-moderate':  { bg: '#fff7ed', text: '#c2410c' },
+                'popup-item-bad':       { bg: '#fef2f2', text: '#b91c1c' },
+                'popup-item-very-bad':  { bg: '#faf5ff', text: '#7e22ce' },
+                'popup-item-hazardous': { bg: '#450a0a', text: '#fca5a5' },
+                'popup-item':           { bg: '#f8fafc', text: '#a0aec0' }
+            };
+            return styles[status] || styles['popup-item'];
+        }
+
         function getMQ2Status(v) {
             if (v == '--') return 'popup-item';
             v = parseFloat(v);
@@ -377,8 +391,8 @@
                     const mq135 = dev.mq135 != null ? dev.mq135.toFixed(0) : '--';
                     const mq2   = dev.mq2 != null   ? dev.mq2.toFixed(0)   : '--';
 
-                    // 1. Heatmap data point
-                    heatData.push([dev.lat, dev.lon, aqi / 100]);
+                    // 1. Heatmap data point - scale by 500 (max AQI)
+                    heatData.push([dev.lat, dev.lon, aqi / 500]);
 
                     const popupContent = `
                     <div class="popup-card">
@@ -406,7 +420,7 @@
                                 <span class="popup-item-value">${humid}<small>%</small></span>
                             </div>
                             <div class="popup-item ${getCOStatus(co)}">
-                                <span class="popup-item-label">💨 Khí CO (<small>${getCOLabel(co)}</small>)</span>
+                                <span class="popup-item-label">💨 MQ-7 (CO) (<small>${getCOLabel(co)}</small>)</span>
                                 <span class="popup-item-value">${co}<small>ppm</small></span>
                             </div>
                             <div class="popup-item ${getMQ135Status(mq135)}">
@@ -475,13 +489,13 @@
                                 </div>
                             </div>
                             <div style="display:flex; gap:5px; margin-top:6px; flex-wrap:wrap;">
-                                <span class="param-badge" style="background:${getTempStatus(temp) == 'popup-item-bad' ? '#fee2e2' : getTempStatus(temp) == 'popup-item-moderate' ? '#fff7ed' : '#dbeafe'}; color:${getTempStatus(temp) == 'popup-item-bad' ? '#991b1b' : getTempStatus(temp) == 'popup-item-moderate' ? '#c2410c' : '#1e40af'}">🌡️ ${temp}°C</span>
-                                <span class="param-badge" style="background:${getHumidStatus(humid) == 'popup-item-bad' ? '#fee2e2' : getHumidStatus(humid) == 'popup-item-moderate' ? '#fff7ed' : '#d1fae5'}; color:${getHumidStatus(humid) == 'popup-item-bad' ? '#991b1b' : getHumidStatus(humid) == 'popup-item-moderate' ? '#c2410c' : '#065f46'}">💧 ${humid}%</span>
-                                <span class="param-badge" style="background:${getCOStatus(co) == 'popup-item-hazardous' ? '#450a0a' : getCOStatus(co) == 'popup-item-very-bad' ? '#f3e8ff' : getCOStatus(co) == 'popup-item-bad' ? '#fee2e2' : getCOStatus(co) == 'popup-item-moderate' ? '#fff7ed' : getCOStatus(co) == 'popup-item-medium' ? '#fefce8' : '#f0fdf4'}; color:${getCOStatus(co) == 'popup-item-hazardous' ? '#fca5a5' : getCOStatus(co) == 'popup-item-very-bad' ? '#7e22ce' : getCOStatus(co) == 'popup-item-bad' ? '#b91c1c' : getCOStatus(co) == 'popup-item-moderate' ? '#c2410c' : getCOStatus(co) == 'popup-item-medium' ? '#854d0e' : '#15803d'}">💨 CO: ${co}</span>
+                                <span class="param-badge" style="background:${getBadgeStyle(getTempStatus(temp)).bg}; color:${getBadgeStyle(getTempStatus(temp)).text}">🌡️ ${temp}°C</span>
+                                <span class="param-badge" style="background:${getBadgeStyle(getHumidStatus(humid)).bg}; color:${getBadgeStyle(getHumidStatus(humid)).text}">💧 ${humid}%</span>
+                                <span class="param-badge" style="background:${getBadgeStyle(getCOStatus(co)).bg}; color:${getBadgeStyle(getCOStatus(co)).text}">💨 MQ-7: ${co}</span>
                             </div>
-                            <div style="margin-top:4px; font-size:10px; font-weight: 500;">
-                                <span style="color:${getMQ135Status(mq135) == 'popup-item-good' ? '#15803d' : '#b91c1c'}">MQ135: ${mq135} (${getMQ135Label(mq135)})</span> | 
-                                <span style="color:${getMQ2Status(mq2) == 'popup-item-good' ? '#15803d' : '#b91c1c'}">MQ2: ${mq2} (${getMQ2Label(mq2)})</span>
+                            <div style="margin-top:4px; font-size:10px; font-weight: 500; display: flex; gap: 8px;">
+                                <span style="color:${getBadgeStyle(getMQ135Status(mq135)).text}">⚠️ MQ135: ${mq135} (${getMQ135Label(mq135)})</span>
+                                <span style="color:${getBadgeStyle(getMQ2Status(mq2)).text}">🔥 MQ2: ${mq2} (${getMQ2Label(mq2)})</span>
                             </div>
                             <div class="station-meta">
                                 <span class="station-time">${dev.created_at ? new Date(dev.created_at).toLocaleTimeString('vi-VN') : '⚡ Ngoại tuyến'}</span>
@@ -500,7 +514,14 @@
                 radius: 80,
                 blur: 60,
                 maxZoom: 17,
-                gradient: { 0.0: '#22c55e', 0.5: '#f97316', 0.75: '#ef4444', 1.0: '#7c3aed' }
+                gradient: { 
+                    0.1: '#22c55e', 
+                    0.2: '#facc15', 
+                    0.3: '#f97316', 
+                    0.4: '#ef4444', 
+                    0.6: '#9333ea', 
+                    1.0: '#7f1d1d' 
+                }
             }).addTo(markerGroup);
         }
 
