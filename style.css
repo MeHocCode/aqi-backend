@@ -709,19 +709,34 @@ header {
     transition: all 0.3s ease;
 }
 
-.popup-item-safe {
-    border-left: 4px solid var(--good);
+.popup-item-good {
+    border-left: 4px solid #22c55e;
     background: #f0fdf4;
 }
 
-.popup-item-warning {
-    border-left: 4px solid var(--moderate);
-    background: #fffaf5;
+.popup-item-medium {
+    border-left: 4px solid #facc15;
+    background: #fefce8;
 }
 
-.popup-item-danger {
-    border-left: 4px solid var(--bad);
-    background: #fff5f5;
+.popup-item-moderate {
+    border-left: 4px solid #f97316;
+    background: #fff7ed;
+}
+
+.popup-item-bad {
+    border-left: 4px solid #ef4444;
+    background: #fef2f2;
+}
+
+.popup-item-very-bad {
+    border-left: 4px solid #9333ea;
+    background: #faf5ff;
+}
+
+.popup-item-hazardous {
+    border-left: 4px solid #7f1d1d;
+    background: #450a0a;
 }
 
 .popup-item-label {
