@@ -207,10 +207,10 @@
         function getTempStatus(t) {
             if (t == '--') return 'popup-item';
             t = parseFloat(t);
-            if (t > 300) return 'popup-item-hazardous';
-            if (t < 18 || t > 32) return 'popup-item-bad';
-            if (t < 22 || t > 28) return 'popup-item-moderate'; // Changed range for better sensitivity
-            return 'popup-item-good';
+            if (t < 18 || t > 33) return 'popup-item-bad';        // Đỏ (Xấu)
+            if (t < 21 || t > 30.5) return 'popup-item-moderate'; // Cam (Kém/TB)
+            if (t < 22.5 || t > 28.5) return 'popup-item-medium'; // Vàng (Tạm được)
+            return 'popup-item-good';                             // Xanh (Tốt)
         }
         function getHumidStatus(h) {
             if (h == '--') return 'popup-item';
