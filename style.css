@@ -739,6 +739,18 @@ header {
     background: #450a0a;
 }
 
+.popup-item-hazardous .popup-item-label {
+    color: #fca5a5;
+}
+
+.popup-item-hazardous .popup-item-value {
+    color: #ffffff;
+}
+
+.popup-item-hazardous .popup-item-value small {
+    color: #fca5a5;
+}
+
 .popup-item-label {
     display: block;
     font-size: 10px;
