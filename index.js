@@ -126,7 +126,7 @@ app.post('/update-sensor', async (req, res) => {
   if (!deviceId) return res.status(400).send("Thiếu deviceId");
 
   try {
-    const val_co    = (parseFloat(co) || 0) / 10;
+    const val_co    = parseFloat(co) || 0;
     const val_mq135 = parseFloat(mq135) || 0;
     const val_mq2   = parseFloat(mq2) || 0;
 
