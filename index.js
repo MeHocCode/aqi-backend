@@ -16,28 +16,28 @@ const pool = new Pool({
 // ── BẢNG ĐIỂM GÃY AQI TÙY CHỈNH (Dựa trên giá trị RAW của cảm biến) ────────────────
 const breakpoints = {
   mq2: [
-    { cLow: 0,     cHigh: 170,  iLow: 0,   iHigh: 50  }, // Tốt
-    { cLow: 170.1, cHigh: 250,  iLow: 51,  iHigh: 100 }, // Trung bình
-    { cLow: 250.1, cHigh: 350,  iLow: 101, iHigh: 150 }, // Kém
-    { cLow: 350.1, cHigh: 500,  iLow: 151, iHigh: 200 }, // Xấu
-    { cLow: 500.1, cHigh: 700,  iLow: 201, iHigh: 300 }, // Rất Xấu
-    { cLow: 700.1, cHigh: 1024, iLow: 301, iHigh: 500 }  // Nguy Hại
+    { cLow: 0,     cHigh: 450,  iLow: 0,   iHigh: 50  }, // Tốt
+    { cLow: 450.1, cHigh: 600,  iLow: 51,  iHigh: 100 }, // Trung bình
+    { cLow: 600.1, cHigh: 750,  iLow: 101, iHigh: 150 }, // Kém
+    { cLow: 750.1, cHigh: 850,  iLow: 151, iHigh: 200 }, // Xấu
+    { cLow: 850.1, cHigh: 950,  iLow: 201, iHigh: 300 }, // Rất Xấu
+    { cLow: 950.1, cHigh: 1024, iLow: 301, iHigh: 500 }  // Nguy Hại
   ],
   co: [
-    { cLow: 0,     cHigh: 50,   iLow: 0,   iHigh: 50  }, // Tốt
-    { cLow: 50.1,  cHigh: 100,  iLow: 51,  iHigh: 100 }, // Trung bình
-    { cLow: 100.1, cHigh: 200,  iLow: 101, iHigh: 150 }, // Kém
-    { cLow: 200.1, cHigh: 400,  iLow: 151, iHigh: 200 }, // Xấu
-    { cLow: 400.1, cHigh: 700,  iLow: 201, iHigh: 300 }, // Rất Xấu
-    { cLow: 700.1, cHigh: 1024, iLow: 301, iHigh: 500 }  // Nguy Hại
+    { cLow: 0,     cHigh: 400,  iLow: 0,   iHigh: 50  }, // Tốt
+    { cLow: 400.1, cHigh: 550,  iLow: 51,  iHigh: 100 }, // Trung bình
+    { cLow: 550.1, cHigh: 700,  iLow: 101, iHigh: 150 }, // Kém
+    { cLow: 700.1, cHigh: 850,  iLow: 151, iHigh: 200 }, // Xấu
+    { cLow: 850.1, cHigh: 950,  iLow: 201, iHigh: 300 }, // Rất Xấu
+    { cLow: 950.1, cHigh: 1024, iLow: 301, iHigh: 500 }  // Nguy Hại
   ],
   mq135: [
-    { cLow: 0,     cHigh: 200,  iLow: 0,   iHigh: 50  }, // Tốt
-    { cLow: 200.1, cHigh: 350,  iLow: 51,  iHigh: 100 }, // Trung bình
-    { cLow: 350.1, cHigh: 500,  iLow: 101, iHigh: 150 }, // Kém
-    { cLow: 500.1, cHigh: 700,  iLow: 151, iHigh: 200 }, // Xấu
-    { cLow: 700.1, cHigh: 850,  iLow: 201, iHigh: 300 }, // Rất Xấu
-    { cLow: 850.1, cHigh: 1024, iLow: 301, iHigh: 500 }  // Nguy Hại
+    { cLow: 0,     cHigh: 450,  iLow: 0,   iHigh: 50  }, // Tốt
+    { cLow: 450.1, cHigh: 600,  iLow: 51,  iHigh: 100 }, // Trung bình
+    { cLow: 600.1, cHigh: 750,  iLow: 101, iHigh: 150 }, // Kém
+    { cLow: 750.1, cHigh: 850,  iLow: 151, iHigh: 200 }, // Xấu
+    { cLow: 850.1, cHigh: 950,  iLow: 201, iHigh: 300 }, // Rất Xấu
+    { cLow: 950.1, cHigh: 1024, iLow: 301, iHigh: 500 }  // Nguy Hại
   ]
 };
 

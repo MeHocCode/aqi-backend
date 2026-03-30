@@ -222,21 +222,21 @@
         function getCOStatus(c) {
             if (c == '--') return 'popup-item';
             c = parseFloat(c);
-            if (c > 700) return 'popup-item-hazardous';
-            if (c > 400) return 'popup-item-very-bad';
-            if (c > 200) return 'popup-item-bad';
-            if (c > 100) return 'popup-item-moderate';
-            if (c > 50)  return 'popup-item-medium';
+            if (c > 950) return 'popup-item-hazardous';
+            if (c > 850) return 'popup-item-very-bad';
+            if (c > 700) return 'popup-item-bad';
+            if (c > 550) return 'popup-item-moderate';
+            if (c > 400) return 'popup-item-medium';
             return 'popup-item-good';
         }
         function getCOLabel(c) {
             if (c == '--') return '';
             c = parseFloat(c);
-            if (c > 700) return 'Nguy Hại';
-            if (c > 400) return 'Rất Xấu';
-            if (c > 200) return 'Xấu';
-            if (c > 100) return 'Kém';
-            if (c > 50)  return 'Trung Bình';
+            if (c > 950) return 'Nguy Hại';
+            if (c > 850) return 'Rất Xấu';
+            if (c > 700) return 'Xấu';
+            if (c > 550) return 'Kém';
+            if (c > 400) return 'Trung Bình';
             return 'Tốt';
         }
 
@@ -257,42 +257,42 @@
         function getMQ2Status(v) {
             if (v == '--') return 'popup-item';
             v = parseFloat(v);
-            if (v > 700) return 'popup-item-hazardous';
-            if (v > 500) return 'popup-item-very-bad';
-            if (v > 350) return 'popup-item-bad';
-            if (v > 250) return 'popup-item-moderate';
-            if (v > 170) return 'popup-item-medium';
+            if (v > 950) return 'popup-item-hazardous';
+            if (v > 850) return 'popup-item-very-bad';
+            if (v > 750) return 'popup-item-bad';
+            if (v > 600) return 'popup-item-moderate';
+            if (v > 450) return 'popup-item-medium';
             return 'popup-item-good';
         }
         function getMQ2Label(v) {
             if (v == '--') return '';
             v = parseFloat(v);
-            if (v > 700) return 'Nguy Hại';
-            if (v > 500) return 'Rất Xấu';
-            if (v > 350) return 'Xấu';
-            if (v > 250) return 'Kém';
-            if (v > 170) return 'Trung Bình';
+            if (v > 950) return 'Nguy Hại';
+            if (v > 850) return 'Rất Xấu';
+            if (v > 750) return 'Xấu';
+            if (v > 600) return 'Kém';
+            if (v > 450) return 'Trung Bình';
             return 'Tốt';
         }
 
         function getMQ135Status(v) {
             if (v == '--') return 'popup-item';
             v = parseFloat(v);
-            if (v > 850) return 'popup-item-hazardous';
-            if (v > 700) return 'popup-item-very-bad';
-            if (v > 500) return 'popup-item-bad';
-            if (v > 350) return 'popup-item-moderate';
-            if (v > 200) return 'popup-item-medium';
+            if (v > 950) return 'popup-item-hazardous';
+            if (v > 850) return 'popup-item-very-bad';
+            if (v > 750) return 'popup-item-bad';
+            if (v > 600) return 'popup-item-moderate';
+            if (v > 450) return 'popup-item-medium';
             return 'popup-item-good';
         }
         function getMQ135Label(v) {
             if (v == '--') return '';
             v = parseFloat(v);
-            if (v > 850) return 'Nguy Hại';
-            if (v > 700) return 'Rất Xấu';
-            if (v > 500) return 'Xấu';
-            if (v > 350) return 'Kém';
-            if (v > 200) return 'Trung Bình';
+            if (v > 950) return 'Nguy Hại';
+            if (v > 850) return 'Rất Xấu';
+            if (v > 750) return 'Xấu';
+            if (v > 600) return 'Kém';
+            if (v > 450) return 'Trung Bình';
             return 'Tốt';
         }
 
