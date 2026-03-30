@@ -207,16 +207,16 @@
         function getTempStatus(t) {
             if (t == '--') return 'popup-item';
             t = parseFloat(t);
-            if (t < 18 || t > 33) return 'popup-item-bad';        // Đỏ (Xấu)
-            if (t < 21 || t > 30.5) return 'popup-item-moderate'; // Cam (Kém/TB)
-            if (t < 22.5 || t > 28.5) return 'popup-item-medium'; // Vàng (Tạm được)
+            if (t < 15 || t > 38) return 'popup-item-bad';        // Đỏ (Xấu)
+            if (t < 18 || t > 35) return 'popup-item-moderate'; // Cam (Kém)
+            if (t < 20 || t > 32) return 'popup-item-medium'; // Vàng (TB)
             return 'popup-item-good';                             // Xanh (Tốt)
         }
         function getHumidStatus(h) {
             if (h == '--') return 'popup-item';
             h = parseFloat(h);
-            if (h < 35 || h > 75) return 'popup-item-bad';
-            if (h < 45 || h > 65) return 'popup-item-moderate';
+            if (h < 30 || h > 95) return 'popup-item-bad';
+            if (h < 40 || h > 90) return 'popup-item-moderate';
             return 'popup-item-good';
         }
         function getCOStatus(c) {
@@ -226,7 +226,7 @@
             if (c > 850) return 'popup-item-very-bad';
             if (c > 700) return 'popup-item-bad';
             if (c > 550) return 'popup-item-moderate';
-            if (c > 400) return 'popup-item-medium';
+            if (c > 350) return 'popup-item-medium';
             return 'popup-item-good';
         }
         function getCOLabel(c) {
@@ -236,7 +236,7 @@
             if (c > 850) return 'Rất Xấu';
             if (c > 700) return 'Xấu';
             if (c > 550) return 'Kém';
-            if (c > 400) return 'Trung Bình';
+            if (c > 350) return 'Trung Bình';
             return 'Tốt';
         }
 
@@ -261,7 +261,7 @@
             if (v > 850) return 'popup-item-very-bad';
             if (v > 750) return 'popup-item-bad';
             if (v > 600) return 'popup-item-moderate';
-            if (v > 450) return 'popup-item-medium';
+            if (v > 400) return 'popup-item-medium';
             return 'popup-item-good';
         }
         function getMQ2Label(v) {
@@ -271,7 +271,7 @@
             if (v > 850) return 'Rất Xấu';
             if (v > 750) return 'Xấu';
             if (v > 600) return 'Kém';
-            if (v > 450) return 'Trung Bình';
+            if (v > 400) return 'Trung Bình';
             return 'Tốt';
         }
 
@@ -282,7 +282,7 @@
             if (v > 850) return 'popup-item-very-bad';
             if (v > 750) return 'popup-item-bad';
             if (v > 600) return 'popup-item-moderate';
-            if (v > 450) return 'popup-item-medium';
+            if (v > 400) return 'popup-item-medium';
             return 'popup-item-good';
         }
         function getMQ135Label(v) {
@@ -292,7 +292,7 @@
             if (v > 850) return 'Rất Xấu';
             if (v > 750) return 'Xấu';
             if (v > 600) return 'Kém';
-            if (v > 450) return 'Trung Bình';
+            if (v > 400) return 'Trung Bình';
             return 'Tốt';
         }
 

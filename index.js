@@ -16,27 +16,27 @@ const pool = new Pool({
 // ── BẢNG ĐIỂM GÃY AQI TÙY CHỈNH (Dựa trên giá trị RAW của cảm biến) ────────────────
 const breakpoints = {
   mq2: [
-    { cLow: 0,     cHigh: 450,  iLow: 0,   iHigh: 50  }, // Tốt
-    { cLow: 450.1, cHigh: 600,  iLow: 51,  iHigh: 100 }, // Trung bình
-    { cLow: 600.1, cHigh: 750,  iLow: 101, iHigh: 150 }, // Kém
-    { cLow: 750.1, cHigh: 850,  iLow: 151, iHigh: 200 }, // Xấu
-    { cLow: 850.1, cHigh: 950,  iLow: 201, iHigh: 300 }, // Rất Xấu
+    { cLow: 0, cHigh: 400, iLow: 0, iHigh: 50 }, // Tốt
+    { cLow: 400.1, cHigh: 600, iLow: 51, iHigh: 100 }, // Trung bình
+    { cLow: 600.1, cHigh: 750, iLow: 101, iHigh: 150 }, // Kém
+    { cLow: 750.1, cHigh: 850, iLow: 151, iHigh: 200 }, // Xấu
+    { cLow: 850.1, cHigh: 950, iLow: 201, iHigh: 300 }, // Rất Xấu
     { cLow: 950.1, cHigh: 1024, iLow: 301, iHigh: 500 }  // Nguy Hại
   ],
   co: [
-    { cLow: 0,     cHigh: 400,  iLow: 0,   iHigh: 50  }, // Tốt
-    { cLow: 400.1, cHigh: 550,  iLow: 51,  iHigh: 100 }, // Trung bình
-    { cLow: 550.1, cHigh: 700,  iLow: 101, iHigh: 150 }, // Kém
-    { cLow: 700.1, cHigh: 850,  iLow: 151, iHigh: 200 }, // Xấu
-    { cLow: 850.1, cHigh: 950,  iLow: 201, iHigh: 300 }, // Rất Xấu
+    { cLow: 0, cHigh: 350, iLow: 0, iHigh: 50 }, // Tốt
+    { cLow: 350.1, cHigh: 550, iLow: 51, iHigh: 100 }, // Trung bình
+    { cLow: 550.1, cHigh: 700, iLow: 101, iHigh: 150 }, // Kém
+    { cLow: 700.1, cHigh: 850, iLow: 151, iHigh: 200 }, // Xấu
+    { cLow: 850.1, cHigh: 950, iLow: 201, iHigh: 300 }, // Rất Xấu
     { cLow: 950.1, cHigh: 1024, iLow: 301, iHigh: 500 }  // Nguy Hại
   ],
   mq135: [
-    { cLow: 0,     cHigh: 450,  iLow: 0,   iHigh: 50  }, // Tốt
-    { cLow: 450.1, cHigh: 600,  iLow: 51,  iHigh: 100 }, // Trung bình
-    { cLow: 600.1, cHigh: 750,  iLow: 101, iHigh: 150 }, // Kém
-    { cLow: 750.1, cHigh: 850,  iLow: 151, iHigh: 200 }, // Xấu
-    { cLow: 850.1, cHigh: 950,  iLow: 201, iHigh: 300 }, // Rất Xấu
+    { cLow: 0, cHigh: 400, iLow: 0, iHigh: 50 }, // Tốt
+    { cLow: 400.1, cHigh: 600, iLow: 51, iHigh: 100 }, // Trung bình
+    { cLow: 600.1, cHigh: 750, iLow: 101, iHigh: 150 }, // Kém
+    { cLow: 750.1, cHigh: 850, iLow: 151, iHigh: 200 }, // Xấu
+    { cLow: 850.1, cHigh: 950, iLow: 201, iHigh: 300 }, // Rất Xấu
     { cLow: 950.1, cHigh: 1024, iLow: 301, iHigh: 500 }  // Nguy Hại
   ]
 };
@@ -52,7 +52,7 @@ function calculateSubAQI(concentration, type) {
       return Math.round(aqi);
     }
   }
-  return 500; 
+  return 500;
 }
 
 // 1. KHỞI TẠO DATABASE
@@ -126,13 +126,13 @@ app.post('/update-sensor', async (req, res) => {
   if (!deviceId) return res.status(400).send("Thiếu deviceId");
 
   try {
-    const val_co    = parseFloat(co) || 0;
+    const val_co = parseFloat(co) || 0;
     const val_mq135 = parseFloat(mq135) || 0;
-    const val_mq2   = parseFloat(mq2) || 0;
+    const val_mq2 = parseFloat(mq2) || 0;
 
     // Tính điểm AQI thành phần dựa trên bảng giá trị Raw mới
-    const aqi_mq2   = calculateSubAQI(val_mq2, 'mq2');
-    const aqi_co    = calculateSubAQI(val_co, 'co');
+    const aqi_mq2 = calculateSubAQI(val_mq2, 'mq2');
+    const aqi_co = calculateSubAQI(val_co, 'co');
     const aqi_mq135 = calculateSubAQI(val_mq135, 'mq135');
 
     // AQI tổng hợp là giá trị cao nhất (nguy hiểm nhất) trong các cảm biến
